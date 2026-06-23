@@ -1,0 +1,61 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: inframedic
+      POSTGRES_USER: inframedic
+      POSTGRES_PASSWORD: inframedic
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/001-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U inframedic -d inframedic"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+    environment:
+      DATABASE_URL: postgresql+psycopg://inframedic:inframedic@postgres:5432/inframedic
+      REDIS_URL: redis://redis:6379/0
+      FLOCI_ENDPOINT_URL: ${FLOCI_ENDPOINT_URL:-http://host.docker.internal:4566}
+      FLOCI_REGION: ${FLOCI_REGION:-us-east-1}
+      FLOCI_ACCESS_KEY_ID: ${FLOCI_ACCESS_KEY_ID:-floci}
+      FLOCI_SECRET_ACCESS_KEY: ${FLOCI_SECRET_ACCESS_KEY:-floci}
+      FLOCI_BUCKET_NAME: ${FLOCI_BUCKET_NAME:-inframedic-artifacts}
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+    environment:
+      VITE_API_URL: http://localhost:8000
+    ports:
+      - "5173:4173"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

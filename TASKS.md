@@ -4,8 +4,8 @@
 - [x] Create project structure
 - [x] Create FastAPI backend
 - [x] Create React frontend
-- [ ] Docker setup
-- [ ] PostgreSQL setup
+- [x] Docker setup
+- [x] PostgreSQL setup
 - [x] Redis setup
 - [x] Floci integration
 
