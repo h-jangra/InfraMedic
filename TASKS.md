@@ -2,15 +2,15 @@
 
 ## Foundation
 - [x] Create project structure
-- [ ] Create FastAPI backend
+- [x] Create FastAPI backend
 - [ ] Create React frontend
 - [ ] Docker setup
 - [ ] PostgreSQL setup
-- [ ] Redis setup
-- [ ] Floci integration
+- [x] Redis setup
+- [x] Floci integration
 
 ## Agents
-- [ ] Monitoring Agent
+- [x] Monitoring Agent
 - [ ] Change Intelligence Agent
 - [ ] Diagnostic Agent
 - [ ] Knowledge Agent
