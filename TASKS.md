@@ -3,7 +3,7 @@
 ## Foundation
 - [x] Create project structure
 - [x] Create FastAPI backend
-- [ ] Create React frontend
+- [x] Create React frontend
 - [ ] Docker setup
 - [ ] PostgreSQL setup
 - [x] Redis setup
@@ -20,7 +20,7 @@
 - [ ] Communication Agent
 
 ## Features
-- [ ] Dashboard
+- [x] Dashboard
 - [ ] Incident Simulator
 - [ ] Historical Incident Explorer
 - [ ] Agent Timeline
