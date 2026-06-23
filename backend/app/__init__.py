@@ -1,0 +1,1 @@
+"""InfraMedic FastAPI application package."""
