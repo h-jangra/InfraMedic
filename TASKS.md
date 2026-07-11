@@ -11,20 +11,20 @@
 
 ## Agents
 - [x] Monitoring Agent
-- [ ] Change Intelligence Agent
-- [ ] Diagnostic Agent
-- [ ] Knowledge Agent
-- [ ] Incident Time Machine Agent
-- [ ] Remediation Agent
-- [ ] Validation Agent
-- [ ] Communication Agent
+- [x] Change Intelligence Agent
+- [x] Diagnostic Agent
+- [x] Knowledge Agent
+- [x] Incident Time Machine Agent
+- [x] Remediation Agent
+- [x] Validation Agent
+- [x] Communication Agent
 
 ## Features
 - [x] Dashboard
-- [ ] Incident Simulator
-- [ ] Historical Incident Explorer
-- [ ] Agent Timeline
-- [ ] Reasoning Trace
+- [x] Incident Simulator
+- [x] Historical Incident Explorer
+- [x] Agent Timeline
+- [x] Reasoning Trace
 
 ## Infrastructure
 - [ ] S3 integration

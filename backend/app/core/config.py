@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     app_name: str = "InfraMedic"
     environment: str = "local"
     api_prefix: str = "/api"
-    cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:5173"])
+    cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:5173", "http://localhost:4173"])
 
     database_url: str = "postgresql+psycopg://inframedic:inframedic@postgres:5432/inframedic"
     redis_url: str = "redis://redis:6379/0"

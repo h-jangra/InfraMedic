@@ -1,6 +1,6 @@
-# InfraMedic
+# InfraMedic AI
 
-Autonomous Self-Healing Enterprise SRE Agent
+Autonomous Enterprise Reliability Platform
 
 See:
 - ARCHITECTURE.md

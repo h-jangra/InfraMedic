@@ -33,6 +33,7 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://inframedic:inframedic@postgres:5432/inframedic
       REDIS_URL: redis://redis:6379/0
+      CORS_ORIGINS: ${CORS_ORIGINS:-["http://localhost:5173","http://localhost:4173"]}
       FLOCI_ENDPOINT_URL: ${FLOCI_ENDPOINT_URL:-http://host.docker.internal:4566}
       FLOCI_REGION: ${FLOCI_REGION:-us-east-1}
       FLOCI_ACCESS_KEY_ID: ${FLOCI_ACCESS_KEY_ID:-floci}
@@ -53,7 +54,7 @@ services:
     environment:
       VITE_API_URL: http://localhost:8000
     ports:
-      - "5173:4173"
+      - "4173:4173"
     depends_on:
       - backend
 
