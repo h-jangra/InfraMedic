@@ -153,6 +153,9 @@ export interface DiscoveredResources {
   databases: any[];
   secrets: any[];
   networking: any[];
+  functions?: any[];
+  clusters?: any[];
+  load_balancers?: any[];
 }
 
 export async function fetchDiscoveredResources(): Promise<DiscoveredResources> {

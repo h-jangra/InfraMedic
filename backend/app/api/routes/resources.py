@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.services.discovery import (
     discover_all_resources,
+    get_cached_resources,
     provision_demo_infrastructure_and_persist,
     teardown_infrastructure_and_persist,
 )
@@ -12,11 +13,11 @@ router = APIRouter(prefix="/resources", tags=["resources"])
 
 @router.get("")
 def get_discovered_resources(db: Session = Depends(get_db)):
-    """Discovers and lists compute, storage, databases, secrets, and networking components."""
+    """Lists cached compute, storage, databases, secrets, and networking components."""
     try:
-        return discover_all_resources(db)
+        return get_cached_resources(db)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Discovery failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Fetching cached resources failed: {str(e)}")
 
 
 @router.post("/provision")

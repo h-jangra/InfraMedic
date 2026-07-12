@@ -22,20 +22,22 @@ InfraMedic's cloud adapter reads credentials from standard AWS locations. By def
 
 ## 2. Least-Privilege IAM Policy
 
-InfraMedic operates as a read-only observer. The following IAM policy grants the minimal permissions necessary to discover resources and poll metrics without allowing resource modification.
+The following IAM policy grants the minimal permissions necessary to discover resources, poll metrics, reboot instances, and execute SSM remediation commands on target hosts.
 
 ```json
 {
     "Version": "2012-10-17",
     "Statement": [
         {
-            "Sid": "InfraMedicReadOnlyDiscovery",
+            "Sid": "InfraMedicDiscoveryAndRemediation",
             "Effect": "Allow",
             "Action": [
                 "ec2:DescribeInstances",
                 "ec2:DescribeVpcs",
                 "ec2:DescribeSubnets",
                 "ec2:DescribeSecurityGroups",
+                "ec2:RebootInstances",
+                "ssm:SendCommand",
                 "ecs:ListClusters",
                 "ecs:DescribeClusters",
                 "ecs:ListTasks",
@@ -93,6 +95,6 @@ To capture container-level metrics (e.g. `OOMKills`, CPU, Memory utilization met
 
 ## 5. Security Considerations
 
-*   **Read-Only Boundary**: Never add write permissions (`ec2:RunInstances`, `rds:DeleteDBInstance`, etc.) to the InfraMedic executor IAM role.
+*   **Least-Privilege Boundary**: Only grant read-only discovery permissions and targeted remediation rights (`ec2:RebootInstances` and `ssm:SendCommand`). Never add full administrative or destructive rights (such as `ec2:RunInstances` or `rds:DeleteDBInstance`) to the InfraMedic executor IAM role.
 *   **Secrets Storage**: Do not store plaintext access keys on disk. Prefer IAM Roles or instance profiles.
 *   **VPC Peering**: Deploy InfraMedic inside a dedicated management VPC, peering to workload VPCs via Transit Gateway or VPC Peering for metrics access.

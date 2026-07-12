@@ -11,6 +11,12 @@ class AWSProvider(CloudProvider):
 
     def _get_client(self, service_name: str, config: dict):
         endpoint_url = config.get("aws_endpoint_url")
+        
+        # Real AWS Provider should ignore localstack/local developer endpoints
+        if self.__class__.__name__ == "AWSProvider":
+            if endpoint_url and any(x in endpoint_url.lower() for x in ["localhost", "127.0.0.1", "host.docker.internal", "4566"]):
+                endpoint_url = None
+
         if not endpoint_url or endpoint_url.strip().lower() in ("none", ""):
             endpoint_url = None
 
@@ -55,7 +61,11 @@ class AWSProvider(CloudProvider):
             elif config.get("aws_access_key_id"):
                 auth_method = "Manual Credentials (advanced)"
             
-            if config.get("aws_endpoint_url") and "4566" in config.get("aws_endpoint_url", ""):
+            effective_endpoint = config.get("aws_endpoint_url")
+            if self.__class__.__name__ == "AWSProvider" and effective_endpoint and any(x in effective_endpoint.lower() for x in ["localhost", "127.0.0.1", "host.docker.internal", "4566"]):
+                effective_endpoint = None
+
+            if effective_endpoint and "4566" in effective_endpoint:
                 auth_method = "Local Developer (Floci)"
 
             return {
@@ -90,11 +100,12 @@ class AWSProvider(CloudProvider):
                         if tag["Key"] == "Name":
                             name = tag["Value"]
                             break
+                    ip_addr = inst.get("PublicIpAddress") or inst.get("PrivateIpAddress", "10.0.0.1")
                     resources.append({
                         "id": inst["InstanceId"],
                         "name": name,
                         "status": inst["State"]["Name"].capitalize(),
-                        "ip": inst.get("PrivateIpAddress", "10.0.0.1"),
+                        "ip": ip_addr,
                         "cpu": 0.0,
                         "memory": 0.0,
                         "type": inst["InstanceType"],

@@ -44,20 +44,25 @@ def get_connections(db: Session = Depends(get_db)):
             for r in all_res:
                 try:
                     details = json.loads(r.details_json)
-                    r_prov = details.get("provider", "").lower()
+                    discovery_prov = details.get("discovery_provider", "")
                     
-                    if p == "floci":
-                        is_local = "4566" in c_settings.get("aws_endpoint_url", "")
-                        if r_prov == "aws" and is_local:
+                    if discovery_prov:
+                        if discovery_prov.lower() == p.lower():
                             res_count += 1
-                    elif p == "aws":
-                        is_local = "4566" in c_settings.get("aws_endpoint_url", "")
-                        if r_prov == "aws" and not is_local:
+                    else:
+                        r_prov = details.get("provider", "").lower()
+                        if p == "floci":
+                            is_local = "4566" in c_settings.get("aws_endpoint_url", "")
+                            if r_prov == "aws" and is_local:
+                                res_count += 1
+                        elif p == "aws":
+                            is_local = "4566" in c_settings.get("aws_endpoint_url", "")
+                            if r_prov == "aws" and not is_local:
+                                res_count += 1
+                        elif p == "azure" and r_prov == "azure":
                             res_count += 1
-                    elif p == "azure" and r_prov == "azure":
-                        res_count += 1
-                    elif p == "gcp" and r_prov == "gcp":
-                        res_count += 1
+                        elif p == "gcp" and r_prov == "gcp":
+                            res_count += 1
                 except Exception:
                     pass
         except Exception:
@@ -127,5 +132,5 @@ def connect_provider(provider: str, db: Session = Depends(get_db)):
 @router.post("/connections/{provider}/sync")
 def sync_provider(provider: str, db: Session = Depends(get_db)):
     from app.services.discovery import discover_all_resources
-    discover_all_resources(db)
+    discover_all_resources(db, provider_name=provider)
     return {"success": True}

@@ -53,30 +53,7 @@ def telemetry_daemon():
             from app.models.telemetry import TelemetrySample
 
             with SessionLocal() as db:
-                # Run resource discovery every 30s to detect cloud changes
-                global discovery_tick
-                if "discovery_tick" not in globals():
-                    discovery_tick = 0
-                discovery_tick += 1
-                if discovery_tick >= 10:
-                    discovery_tick = 0
-                    try:
-                        from app.services.discovery import discover_all_resources
-                        discover_all_resources(db)
-                    except Exception as de:
-                        logger.warning(f"Auto discovery sync failed: {de}")
-
                 c_settings = get_cloud_settings(db)
-                provider_name = "floci"
-                aws_endpoint = c_settings.get("aws_endpoint_url", "")
-                if aws_endpoint and "localhost" not in aws_endpoint and "127.0.0.1" not in aws_endpoint:
-                    provider_name = "aws"
-                elif c_settings.get("azure_subscription_id"):
-                    provider_name = "azure"
-                elif c_settings.get("gcp_project_id") and c_settings.get("gcp_project_id") != "floci-gcp-project":
-                    provider_name = "gcp"
-
-                provider = get_cloud_provider(provider_name)
 
                 instances = db.scalars(select(CloudResource).where(CloudResource.resource_type == "compute")).all()
                 if not instances:
@@ -88,23 +65,53 @@ def telemetry_daemon():
                 for inst in instances:
                     svc = inst.name
                     
-                    cpu = 20.0 + random.random() * 15.0
-                    mem = 40.0 + random.random() * 10.0
-                    lat = 100.0 + random.random() * 50.0
-                    err = random.random() * 0.1
+                    import json
+                    is_real_cloud = False
+                    cpu = None
+                    mem = None
 
-                    if svc in active_services:
-                        inc = active_services[svc]
-                        if inc.metric_name == "cpu_percent":
-                            cpu = 94.0 + random.random() * 4.0
-                        elif inc.metric_name == "memory_percent":
-                            mem = 96.0 + random.random() * 3.0
-                        elif inc.metric_name == "error_rate_percent":
-                            err = 8.5 + random.random() * 2.0
-                            lat = 850.0 + random.random() * 100.0
-                        elif inc.metric_name == "latency_ms":
-                            lat = 1200.0 + random.random() * 200.0
-                            err = 2.5 + random.random() * 1.5
+                    try:
+                        details = json.loads(inst.details_json) if inst.details_json else {}
+                        provider_name = details.get("discovery_provider") or details.get("provider", "")
+                        if provider_name.lower() in ("aws", "azure", "gcp"):
+                            is_real_cloud = True
+                            ip = details.get("ip")
+                            instance_id = details.get("id") or inst.resource_id
+
+                            from app.services.cloud.metrics import fetch_real_host_metrics
+                            real_cpu, real_mem = fetch_real_host_metrics(ip, instance_id, provider_name, c_settings)
+                            if real_cpu is not None:
+                                cpu = real_cpu
+                            if real_mem is not None:
+                                mem = real_mem
+                    except Exception as me:
+                        logger.warning(f"Error fetching real metrics for {svc}: {me}")
+
+                    if not is_real_cloud:
+                        cpu = 20.0 + random.random() * 15.0
+                        mem = 40.0 + random.random() * 10.0
+                        lat = 100.0 + random.random() * 50.0
+                        err = random.random() * 0.1
+
+                        if svc in active_services:
+                            inc = active_services[svc]
+                            if inc.metric_name == "cpu_percent":
+                                cpu = 94.0 + random.random() * 4.0
+                            elif inc.metric_name == "memory_percent":
+                                mem = 96.0 + random.random() * 3.0
+                            elif inc.metric_name == "error_rate_percent":
+                                err = 8.5 + random.random() * 2.0
+                                lat = 850.0 + random.random() * 100.0
+                            elif inc.metric_name == "latency_ms":
+                                lat = 1200.0 + random.random() * 200.0
+                                err = 2.5 + random.random() * 1.5
+                    else:
+                        if cpu is None:
+                            cpu = 20.0 + random.random() * 15.0
+                        if mem is None:
+                            mem = 40.0 + random.random() * 10.0
+                        lat = 100.0 + random.random() * 50.0
+                        err = random.random() * 0.1
 
                     sample = TelemetrySample(
                         service_name=svc,
@@ -118,29 +125,45 @@ def telemetry_daemon():
 
                     breaching_metric = None
                     breach_val = 0
+                    threshold_val = 0.0
                     if cpu > 92.0:
                         breaching_metric = "cpu_percent"
                         breach_val = cpu
+                        threshold_val = 92.0
                     elif mem > 94.0:
                         breaching_metric = "memory_percent"
                         breach_val = mem
+                        threshold_val = 94.0
                     elif err > 8.0:
                         breaching_metric = "error_rate_percent"
                         breach_val = err
+                        threshold_val = 8.0
                     elif lat > 1000.0:
                         breaching_metric = "latency_ms"
                         breach_val = lat
+                        threshold_val = 1000.0
 
                     if breaching_metric and svc not in active_services:
                         title = f"High {breaching_metric.replace('_', ' ')} detected on {svc}"
                         logger.info(f"Threshold breach detected: {svc} {breaching_metric} = {breach_val:.2f}. Raising incident ticket.")
                         
-                        incident = create_incident(
-                            db=db,
+                        from app.schemas.incident import IncidentCreate
+                        from app.models.incident import IncidentSeverity
+
+                        payload = IncidentCreate(
                             title=title,
+                            description=f"{breaching_metric.replace('_', ' ')} is {breach_val:.2f}, above the threshold of {threshold_val}.",
                             service_name=svc,
                             metric_name=breaching_metric,
-                            metric_value=breach_val
+                            metric_value=breach_val,
+                            threshold=threshold_val,
+                            severity=IncidentSeverity.critical,
+                            agent="Monitoring Agent"
+                        )
+                        
+                        incident = create_incident(
+                            db=db,
+                            payload=payload
                         )
                         
                         threading.Thread(
