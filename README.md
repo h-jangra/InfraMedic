@@ -5,10 +5,8 @@
 InfraMedic is an autonomous, swarming multi-agent platform designed to monitor, diagnose, and remediate cloud infrastructure incidents in under 60 seconds. By combining a **LangGraph** orchestrator with real-time telemetry analysis, Standard Operating Procedure (SOP) playbooks search, and SSH/SSM execution hooks, InfraMedic acts as a digital SRE teammate for your cloud platforms.
 
 ---
-
-## 📸 SRE Dashboard
-
-![InfraMedic SRE Console Dashboard](/dashboard_screenshot.jpg)
+## Demo Video
+[![Watch the demo](https://img.youtube.com/vi/z2gQHruJPGM/maxresdefault.jpg)](https://youtu.be/z2gQHruJ)
 
 ---
 
